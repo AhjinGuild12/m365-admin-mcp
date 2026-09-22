@@ -175,3 +175,7 @@ Use these to confirm the install—not to dump tenant data into tickets.
 ## Roadmap (not shipped here)
 
 Teams admin MCP, Exchange admin MCP, and a broader M365 Admin MCP are **planned** add-ons to this suite. This repo today is Entra + Intune + SharePoint admin only.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
