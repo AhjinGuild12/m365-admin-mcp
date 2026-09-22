@@ -263,12 +263,59 @@ export function scanHygiene({
   };
 }
 
+function parseStatusClass(error) {
+  const text = typeof error === 'string' ? error : JSON.stringify(error ?? '');
+  if (/\b4xx\b/.test(text)) return '4xx';
+  if (/\b5xx\b/.test(text)) return '5xx';
+  if (/\bauth\b/.test(text)) return 'auth';
+  return 'other';
+}
+
+/**
+ * Fail-closed probe evaluation (R30). Returns pass, fail, unresolved, or skipped.
+ * A missing target is skipped. An MCP error is fail. complete:false with a page
+ * or throttle stop is unresolved. A declared item_cap stop on a bounded probe passes.
+ */
+export function evaluateProbe(spec, message) {
+  const targetMissing = !spec || spec.targetPresent === false || spec.missingTarget === true;
+  if (targetMissing) {
+    return { status: 'skipped', statusClass: null };
+  }
+  if (message && message.error) {
+    return { status: 'fail', statusClass: parseStatusClass(message.error) };
+  }
+  const payload = message && (message.result ?? message.payload ?? message);
+  const body = payload && typeof payload === 'object' ? payload : {};
+  if (spec.kind === 'single' || spec.expectedId != null) {
+    const id = body.id;
+    const expected = spec.expectedId;
+    if (typeof id !== 'string' || typeof expected !== 'string' || id.toLowerCase() !== expected.toLowerCase()) {
+      return { status: 'fail', statusClass: null };
+    }
+    return { status: 'pass', statusClass: null };
+  }
+  if (body.complete === false && (body.stop_reason === 'page_error' || body.stop_reason === 'throttling_exhausted')) {
+    return { status: 'unresolved', statusClass: body.error_class || null };
+  }
+  if (body.complete === true) {
+    return { status: 'pass', statusClass: null };
+  }
+  if (spec.bounded === true && body.stop_reason === 'item_cap') {
+    return { status: 'pass', statusClass: null };
+  }
+  if (body.complete === false) {
+    return { status: 'unresolved', statusClass: body.error_class || null };
+  }
+  return { status: 'fail', statusClass: null };
+}
+
 export function defaultHygieneSurfaces({
   home = os.userInfo().homedir,
   workspaceRoot,
   evidenceDir,
   registrationName,
   preRegistration = false,
+  extraSurfaces = [],
 } = {}) {
   const grokLog = path.join(home, '.grok', 'logs', 'mcp', `${registrationName}.stderr.log`);
   return [
@@ -283,6 +330,7 @@ export function defaultHygieneSurfaces({
     },
     { name: 'workspace', path: workspaceRoot, kind: 'dir' },
     { name: 'evidence', path: evidenceDir, kind: 'dir' },
+    ...extraSurfaces,
   ];
 }
 

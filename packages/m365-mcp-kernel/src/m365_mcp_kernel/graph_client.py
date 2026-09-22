@@ -44,6 +44,7 @@ ALLOWED_REPORT_FUNCTIONS = frozenset(
         "getSharePointSiteUsageSiteCounts",
         "getMailboxUsageDetail",
         "getEmailActivityUserDetail",
+        "getTeamsTeamActivityDetail",
     }
 )
 ALLOWED_REPORT_PERIODS = frozenset({"D7", "D30", "D90", "D180"})

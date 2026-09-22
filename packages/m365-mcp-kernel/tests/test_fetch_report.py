@@ -265,6 +265,36 @@ def test_fetch_report_malformed_csv(graph_client_factory) -> None:
     _assert_no_url_leak(exc.value)
 
 
+def test_fetch_report_accepts_teams_team_activity_detail(graph_client_factory) -> None:
+    client, recorder = _clients(
+        graph_client_factory,
+        REPORT_HOST,
+        httpx.Response(200, content=CSV_BODY.encode("utf-8")),
+    )
+    rows = client.fetch_report("getTeamsTeamActivityDetail", "D7")
+    assert len(rows) == 1
+    assert len(recorder.requests) == 1
+    assert recorder.requests[0].headers.get("Authorization") is None
+
+
+def test_fetch_report_rejects_other_teams_reports_without_call(graph_client_factory) -> None:
+    calls = {"c": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["c"] += 1
+        return httpx.Response(302, headers={"Location": REPORT_HOST})
+
+    client = graph_client_factory(
+        http_client=httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=False)
+    )
+    for name in ("getTeamsUserActivityUserDetail", "getTeamsDeviceUsageUserDetail"):
+        with pytest.raises(SanitizedGraphError, match="report_function_rejected"):
+            client.fetch_report(name, "D7")
+    with pytest.raises(SanitizedGraphError, match="report_period_rejected"):
+        client.fetch_report("getTeamsTeamActivityDetail", "D1")
+    assert calls["c"] == 0
+
+
 def test_fetch_report_rejects_unknown_function_without_call(graph_client_factory) -> None:
     n = {"c": 0}
 

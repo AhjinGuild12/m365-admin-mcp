@@ -1,0 +1,1 @@
+"""Teams admin MCP tests."""

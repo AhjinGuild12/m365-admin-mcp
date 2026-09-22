@@ -15,8 +15,8 @@ IT admins use these so an assistant can **query** Entra ID, Intune, and SharePoi
 | **Live** | `packages/entra-mcp-server` | Users, groups, devices, sign-ins (no IPs), licenses, apps, Conditional Access, PIM eligibility/active/settings, domains | **42** |
 | **Live** | `packages/intune-mcp-server` | Managed devices, compliance, apps, configuration policies, audit | **13** |
 | **Live** | `packages/spo-admin-mcp-server` | Tenant sharing / access / site-creation settings, site usage | **7** |
-| Shared | `packages/m365-mcp-kernel` | Shared Graph client + network policy (used by Intune & SPO) | — |
-| **Planned** | Teams admin MCP | Not in this repo yet | — |
+| **Live** | `packages/teams-admin-mcp-server` | Teams inventory, settings and labels, members and owners, channels and channel members, installed and org apps, per-user policy assignments, team activity | **13** |
+| Shared | `packages/m365-mcp-kernel` | Shared Graph client + network policy (used by Intune, SPO, and Teams) | — |
 | **Planned** | Exchange admin MCP | Not in this repo yet | — |
 | **Planned** | M365 Admin center MCP | Not in this repo yet | — |
 
@@ -54,6 +54,7 @@ Prefixes:
 - Entra → `ENTRA_`
 - Intune → `INTUNE_`
 - SharePoint admin → `SPO_ADMIN_`
+- Teams admin → `TEAMS_ADMIN_` (`TEAMS_ADMIN_TENANT_ID`, `TEAMS_ADMIN_CLIENT_ID`, `TEAMS_ADMIN_CLIENT_SECRET`, `TEAMS_ADMIN_SECRET_EXPIRES`)
 
 ### One-time Entra setup (per tenant)
 
@@ -79,7 +80,66 @@ cd packages/entra-mcp-server
 uv sync
 ```
 
-Repeat `uv sync` inside `packages/intune-mcp-server` or `packages/spo-admin-mcp-server` as needed. Intune/SPO resolve the kernel via the monorepo layout—keep the clone intact.
+Repeat `uv sync` inside `packages/intune-mcp-server`, `packages/spo-admin-mcp-server`, or `packages/teams-admin-mcp-server` as needed. Workloads resolve the kernel via the monorepo layout—keep the clone intact.
+
+### Teams admin launcher install
+
+Teams admin is wired only through the fail-closed launcher. Clone the repo, sync the kernel, then sync the package:
+
+```bash
+cd packages/m365-mcp-kernel && uv sync
+cd ../teams-admin-mcp-server && uv sync
+```
+
+Create `~/.config/teams-admin-mcp/` at mode 0700 and `teams-admin-mcp.env` at mode 0600 with `YOUR_TENANT_ID`, `YOUR_CLIENT_ID`, `YOUR_CLIENT_SECRET`, and `YOUR_SECRET_EXPIRES` on the four `TEAMS_ADMIN_` variables. Then, from the clone root:
+
+```bash
+node ops/teams-admin-mcp-gate.mjs --install
+```
+
+Add one host entry. Arguments stay empty. Do not put an `env` block on the host entry. The launcher reads the 0600 file itself.
+
+Claude (`~/.claude.json`):
+
+```json
+{
+  "mcpServers": {
+    "teams-admin-ro": {
+      "command": "~/.config/teams-admin-mcp/bin/teams-admin-mcp-launch.mjs",
+      "args": []
+    }
+  }
+}
+```
+
+Codex (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.teams-admin-ro]
+command = "~/.config/teams-admin-mcp/bin/teams-admin-mcp-launch.mjs"
+args = []
+```
+
+Grok (`~/.grok/config.toml`):
+
+```toml
+[mcp_servers.teams-admin-ro]
+command = "~/.config/teams-admin-mcp/bin/teams-admin-mcp-launch.mjs"
+args = []
+```
+
+Cursor (`~/.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "teams-admin-ro": {
+      "command": "~/.config/teams-admin-mcp/bin/teams-admin-mcp-launch.mjs",
+      "args": []
+    }
+  }
+}
+```
 
 ### Cursor / Claude Desktop MCP snippet
 
@@ -146,6 +206,12 @@ Use these to confirm the install—not to dump tenant data into tickets.
 - [ ] MCP host lists ~**7** tools.
 - [ ] `get_tenant_sharing_settings` (or `get_tenant_settings`) succeeds.
 
+**Teams admin**
+
+- [ ] Each host lists **13** tools for `teams-admin-ro`.
+- [ ] `list_teams` returns a bounded inventory.
+- [ ] `get_user_teams_policy_assignments` echoes the user object id (Global cloud).
+
 **Fail closed**
 
 - [ ] Wrong / missing secret → server fails to start or calls return auth errors (no silent empty success).
@@ -158,6 +224,7 @@ Use these to confirm the install—not to dump tenant data into tickets.
 - [Entra guide](docs/guides/entra.md)
 - [Intune guide](docs/guides/intune.md)
 - [SharePoint admin guide](docs/guides/spo-admin.md)
+- [Teams admin guide](docs/guides/teams-admin.md)
 - [Permissions matrix](docs/permissions.md)
 - [Secret scrub checklist](docs/secret-scrub-checklist.md)
 
@@ -174,7 +241,7 @@ Use these to confirm the install—not to dump tenant data into tickets.
 
 ## Roadmap (not shipped here)
 
-Teams admin MCP, Exchange admin MCP, and a broader M365 Admin MCP are **planned** add-ons to this suite. This repo today is Entra + Intune + SharePoint admin only.
+Exchange admin MCP and a broader M365 Admin MCP are **planned** add-ons. Teams admin is in this repo as `teams-admin-ro` (13 tools) and is installed only through `teams-admin-mcp-launch.mjs`.
 
 ## License
 
