@@ -17,7 +17,7 @@ IT admins use these so an assistant can **query** Entra ID, Intune, and SharePoi
 | **Live** | `packages/spo-admin-mcp-server` | Tenant sharing / access / site-creation settings, site usage | **7** |
 | **Live** | `packages/teams-admin-mcp-server` | Teams inventory, settings and labels, members and owners, channels and channel members, installed and org apps, per-user policy assignments, team activity | **13** |
 | Shared | `packages/m365-mcp-kernel` | Shared Graph client + network policy (used by Intune, SPO, and Teams) | — |
-| **Planned** | Exchange admin MCP | Not in this repo yet | — |
+| **Live** | `packages/exchange-admin-mcp-server` | Message trace, mailboxes, rooms, folder permissions, group members, accepted domains, organization MailTips | **15** |
 | **Planned** | M365 Admin center MCP | Not in this repo yet | — |
 
 Optional hardened launchers/gates live under `ops/` (fail-closed env loading). Day-to-day install usually uses `uv` + MCP host env vars (below).
@@ -55,6 +55,7 @@ Prefixes:
 - Intune → `INTUNE_`
 - SharePoint admin → `SPO_ADMIN_`
 - Teams admin → `TEAMS_ADMIN_` (`TEAMS_ADMIN_TENANT_ID`, `TEAMS_ADMIN_CLIENT_ID`, `TEAMS_ADMIN_CLIENT_SECRET`, `TEAMS_ADMIN_SECRET_EXPIRES`)
+- Exchange admin → `EXO_` (`EXO_TENANT_ID`, `EXO_CLIENT_ID`, `EXO_CLIENT_SECRET`, `EXO_SECRET_EXPIRES`)
 
 ### One-time Entra setup (per tenant)
 
@@ -141,6 +142,65 @@ Cursor (`~/.cursor/mcp.json`):
 }
 ```
 
+### Exchange admin launcher install
+
+Exchange admin is wired only through the fail-closed launcher. Clone the repo, sync the kernel, then sync the package:
+
+```bash
+cd packages/m365-mcp-kernel && uv sync
+cd ../exchange-admin-mcp-server && uv sync
+```
+
+Create `~/.config/exchange-admin-mcp/` at mode 0700 and `exchange-admin-mcp.env` at mode 0600 with `YOUR_TENANT_ID`, `YOUR_CLIENT_ID`, `YOUR_CLIENT_SECRET`, and `YOUR_SECRET_EXPIRES` on the four `EXO_` variables. Then, from the clone root:
+
+```bash
+node ops/exchange-admin-mcp-gate.mjs --install
+```
+
+Add one host entry. Arguments stay empty. Do not put an `env` block on the host entry. The launcher reads the 0600 file itself.
+
+Claude (`~/.claude.json`):
+
+```json
+{
+  "mcpServers": {
+    "exchange-admin-ro": {
+      "command": "~/.config/exchange-admin-mcp/bin/exchange-admin-mcp-launch.mjs",
+      "args": []
+    }
+  }
+}
+```
+
+Codex (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.exchange-admin-ro]
+command = "~/.config/exchange-admin-mcp/bin/exchange-admin-mcp-launch.mjs"
+args = []
+```
+
+Grok (`~/.grok/config.toml`):
+
+```toml
+[mcp_servers.exchange-admin-ro]
+command = "~/.config/exchange-admin-mcp/bin/exchange-admin-mcp-launch.mjs"
+args = []
+```
+
+Cursor (`~/.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "exchange-admin-ro": {
+      "command": "~/.config/exchange-admin-mcp/bin/exchange-admin-mcp-launch.mjs",
+      "args": []
+    }
+  }
+}
+```
+
 ### Cursor / Claude Desktop MCP snippet
 
 Add one server entry per product (stdio). Paths and command must match your machine:
@@ -212,6 +272,12 @@ Use these to confirm the install—not to dump tenant data into tickets.
 - [ ] `list_teams` returns a bounded inventory.
 - [ ] `get_user_teams_policy_assignments` echoes the user object id (Global cloud).
 
+**Exchange admin**
+
+- [ ] Each host lists **15** tools for `exchange-admin-ro`.
+- [ ] `list_message_traces` returns a bounded trace, with no IP addresses.
+- [ ] `get_organization_config` returns MailTips settings after the role group reconciles.
+
 **Fail closed**
 
 - [ ] Wrong / missing secret → server fails to start or calls return auth errors (no silent empty success).
@@ -225,6 +291,7 @@ Use these to confirm the install—not to dump tenant data into tickets.
 - [Intune guide](docs/guides/intune.md)
 - [SharePoint admin guide](docs/guides/spo-admin.md)
 - [Teams admin guide](docs/guides/teams-admin.md)
+- [Exchange admin guide](docs/guides/exchange-admin.md)
 - [Permissions matrix](docs/permissions.md)
 - [Secret scrub checklist](docs/secret-scrub-checklist.md)
 
@@ -241,7 +308,7 @@ Use these to confirm the install—not to dump tenant data into tickets.
 
 ## Roadmap (not shipped here)
 
-Exchange admin MCP and a broader M365 Admin MCP are **planned** add-ons. Teams admin is in this repo as `teams-admin-ro` (13 tools) and is installed only through `teams-admin-mcp-launch.mjs`.
+A broader M365 Admin MCP is a **planned** add-on. Teams admin is in this repo as `teams-admin-ro` (13 tools) and is installed only through `teams-admin-mcp-launch.mjs`. Exchange admin is in this repo as `exchange-admin-ro` (15 tools) and is installed only through `exchange-admin-mcp-launch.mjs`.
 
 ## License
 

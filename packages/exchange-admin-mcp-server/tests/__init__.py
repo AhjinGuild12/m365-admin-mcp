@@ -1,0 +1,1 @@
+"""Exchange admin MCP tests."""
