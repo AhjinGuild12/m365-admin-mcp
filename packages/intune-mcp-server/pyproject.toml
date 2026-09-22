@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "intune-mcp"
+version = "0.1.0"
+description = "Read-only Microsoft Intune MCP server (stdio, app-only)"
+requires-python = ">=3.10"
+dependencies = [
+    "m365-mcp-kernel",
+    "mcp>=2.1,<3",
+    "azure-identity",
+    "httpx",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/intune_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.uv]
+required-version = ">=0.11.28"
+# Closed supply chain for the two permitted local builds (W.U2: kernel, then workload).
+# Exact pins of hatchling and its declared transitive build deps (KTD12).
+build-constraint-dependencies = [
+    "hatchling==1.32.0",
+    "packaging==26.3",
+    "pathspec==1.1.1",
+    "pluggy==1.6.0",
+    "tomlkit==0.15.1",
+    "trove-classifiers==2026.6.1.19",
+]
+
+[tool.uv.sources]
+m365-mcp-kernel = { path = "../m365-mcp-kernel", editable = true }

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "m365-mcp-kernel"
+version = "0.1.0"
+description = "Shared read-only Microsoft Graph kernel for M365 admin MCP servers"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=2.1,<3",
+    "azure-identity",
+    "httpx",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/m365_mcp_kernel"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.uv]
+required-version = ">=0.11.28"
+# Closed supply chain for the one permitted local build (U0 editable install).
+# Exact pins of hatchling and its declared transitive build deps (KTD12).
+build-constraint-dependencies = [
+    "hatchling==1.32.0",
+    "packaging==26.3",
+    "pathspec==1.1.1",
+    "pluggy==1.6.0",
+    "tomlkit==0.15.1",
+    "trove-classifiers==2026.6.1.19",
+]
