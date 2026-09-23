@@ -12,6 +12,7 @@ App-only `ClientSecretCredential`. Env prefix `EXO_`: tenant id, client id, clie
 
 Microsoft Graph application grants:
 
+- `Calendars.Read` (Jan-approved extra 2026-09-23; room free/busy)
 - `ExchangeMessageTrace.Read.All`
 - `Place.Read.All`
 - `Reports.Read.All`
@@ -241,7 +242,7 @@ Subjects, sender names, and group display names are attacker-influenceable text.
 
 ## Four grants
 
-The four grants above are the whole set: three Graph, one Exchange. Do not add a fifth grant to make a probe pass. That needs a plan change.
+Graph grants include Jan-approved `Calendars.Read` (2026-09-23) plus the three frozen Graph grants, and `Exchange.ManageAsAppV2`. Do not add further grants to make a probe pass without a plan change.
 
 ## Phase B checklist
 

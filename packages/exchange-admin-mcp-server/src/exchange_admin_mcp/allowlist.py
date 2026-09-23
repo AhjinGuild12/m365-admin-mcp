@@ -21,6 +21,7 @@ TOOL_NAMES: tuple[str, ...] = (
 )
 
 GRAPH_GRANTS: tuple[str, ...] = (
+    "Calendars.Read",  # Jan-approved extra 2026-09-23 (room free/busy); not in original freeze
     "ExchangeMessageTrace.Read.All",
     "Place.Read.All",
     "Reports.Read.All",

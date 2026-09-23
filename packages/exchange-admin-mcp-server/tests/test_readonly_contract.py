@@ -54,6 +54,7 @@ def test_advertised_names_equal_tool_names() -> None:
 
 def test_grants_are_exact() -> None:
     assert GRAPH_GRANTS == (
+        "Calendars.Read",
         "ExchangeMessageTrace.Read.All",
         "Place.Read.All",
         "Reports.Read.All",

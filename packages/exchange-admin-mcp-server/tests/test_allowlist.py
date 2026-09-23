@@ -29,6 +29,7 @@ def test_tool_names_are_the_frozen_fifteen() -> None:
 
 def test_grants_are_exact() -> None:
     assert GRAPH_GRANTS == (
+        "Calendars.Read",
         "ExchangeMessageTrace.Read.All",
         "Place.Read.All",
         "Reports.Read.All",
@@ -37,7 +38,9 @@ def test_grants_are_exact() -> None:
     joined = " ".join(GRAPH_GRANTS + EXO_GRANTS)
     assert "ReadWrite" not in joined
     assert "Directory." not in joined
-    assert not any(name.endswith(".Read") for name in GRAPH_GRANTS + EXO_GRANTS)
+    # Calendars.Read is the only bare .Read grant (Jan-approved 2026-09-23).
+    bare_read = [n for n in GRAPH_GRANTS + EXO_GRANTS if n.endswith(".Read")]
+    assert bare_read == ["Calendars.Read"]
 
 
 def test_endpoint_map_is_six_get_cmdlets() -> None:
